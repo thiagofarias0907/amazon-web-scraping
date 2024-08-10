@@ -95,8 +95,8 @@ class Controller:
         """Extract the item's name"""
         match = item.select('.a-size-base-plus.a-color-base.a-text-normal')
         if (match is None) or (len(match) == 0):
-            return False
-        match_text = re.sub("\\n\s+", ' ', match[0].text.strip())
+            return ''
+        match_text = re.sub("\\n\\s+", ' ', match[0].text.strip())
         return match_text
 
     def _get_price(self, item) -> float:
