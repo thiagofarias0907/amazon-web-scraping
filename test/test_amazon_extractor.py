@@ -1,12 +1,10 @@
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch
 
 from controllers.main import Controller
 
 
-
 class AmazonExtractorTestCase(unittest.TestCase):
-
     complete_page_controller = Controller('pages/complete_page.html')
     fewer_items_page_controller = Controller('pages/fewer_items_page.html')
     without_items_page_controller = Controller('pages/items_not_found.html')
@@ -18,15 +16,21 @@ class AmazonExtractorTestCase(unittest.TestCase):
 
     def test_number_of_items_parsed(self):
         """Should match the right number of items in each page"""
-        self.assertEqual(24, len(self.complete_page_controller._find_items()), "Main html page parser must match 24 items")
-        self.assertEqual(9, len(self.fewer_items_page_controller._find_items()), "'Fewer Items' html page parser must match 9 items")
-        self.assertEqual(0, len(self.without_items_page_controller._find_items()), "'Items Not Found' html page parser must match 0 item")
+        self.assertEqual(24, len(self.complete_page_controller._find_items()),
+                         "Main html page parser must match 24 items")
+        self.assertEqual(9, len(self.fewer_items_page_controller._find_items()),
+                         "'Fewer Items' html page parser must match 9 items")
+        self.assertEqual(0, len(self.without_items_page_controller._find_items()),
+                         "'Items Not Found' html page parser must match 0 item")
 
     def test_number_of_products_extracted(self):
         """Should match the number of products extracted that must be returned for each page"""
-        self.assertEqual(24, len(self.complete_page_controller.list_products()), "Main html page must return 24 products")
-        self.assertEqual(9, len(self.fewer_items_page_controller.list_products()), "'Fewer Items' must return 9 products")
-        self.assertEqual(0, len(self.without_items_page_controller.list_products()), "'Items Not Found' must return 0 products")
+        self.assertEqual(24, len(self.complete_page_controller.list_products()),
+                         "Main html page must return 24 products")
+        self.assertEqual(9, len(self.fewer_items_page_controller.list_products()),
+                         "'Fewer Items' must return 9 products")
+        self.assertEqual(0, len(self.without_items_page_controller.list_products()),
+                         "'Items Not Found' must return 0 products")
 
     def test_has_rating(self):
         """Should match true when the item's innerHtml has the bestseller tag, false otherwise"""
@@ -55,19 +59,19 @@ class AmazonExtractorTestCase(unittest.TestCase):
         """Should extract the whole part digits of the price"""
 
         regular_item = self.regular_item_controller.soup
-        self.assertEqual(1719, self.regular_item_controller._get_whole_price(regular_item))
+        self.assertEqual(1719, self.regular_item_controller._get_whole_price_value(regular_item))
 
         bestseller_item = self.bestseller_item_controller.soup
-        self.assertEqual(248, self.bestseller_item_controller._get_whole_price(bestseller_item))
+        self.assertEqual(248, self.bestseller_item_controller._get_whole_price_value(bestseller_item))
 
     def test_price_decimal_value(self):
         """Should extract the decimal / fractional part digits of the price"""
 
         regular_item = self.regular_item_controller.soup
-        self.assertEqual(0, self.regular_item_controller._get_decimal_price(regular_item))
+        self.assertEqual(0, self.regular_item_controller._get_decimal_fraction_price_value(regular_item))
 
         bestseller_item = self.bestseller_item_controller.soup
-        self.assertEqual(89, self.bestseller_item_controller._get_decimal_price(bestseller_item))
+        self.assertEqual(89, self.bestseller_item_controller._get_decimal_fraction_price_value(bestseller_item))
 
     def test_price_float(self):
         """Should return the complete price value as float"""
@@ -98,6 +102,7 @@ class AmazonExtractorTestCase(unittest.TestCase):
                          self.bestseller_item_controller._get_name(best_seller_item))
 
     def test_first_item_values(self):
+        """Should parse the first item's values correctly"""
         first_product = self.complete_page_controller.list_products()[0]
         self.assertEqual("Smartphone Poco X3 PRO 256gb 8gb RAM – Phantom Black - Preto", first_product.name)
         self.assertEqual(1975.0, first_product.price)
@@ -105,6 +110,7 @@ class AmazonExtractorTestCase(unittest.TestCase):
         self.assertTrue(first_product.bestseller)
 
     def test_last_item_values(self):
+        """Should parse the last item's values correctly"""
         first_product = self.complete_page_controller.list_products()[23]
         self.assertEqual("Novo Apple iPad - 10,2 polegadas, Wi-Fi, 32 GB - Space Gray - 8ª geração", first_product.name)
         self.assertEqual(2538.57, first_product.price)
@@ -112,13 +118,17 @@ class AmazonExtractorTestCase(unittest.TestCase):
         self.assertFalse(first_product.bestseller)
 
     def test_third_item_values(self):
+        """Should parse the third item's values correctly"""
         first_product = self.complete_page_controller.list_products()[2]
-        self.assertEqual("Fire TV Stick Lite com Controle Remoto Lite por Voz com Alexa (sem controles de TV) | Streaming em Full HD | Modelo 2020", first_product.name)
+        self.assertEqual(
+            "Fire TV Stick Lite com Controle Remoto Lite por Voz com Alexa (sem controles de TV) | Streaming em Full HD | Modelo 2020",
+            first_product.name)
         self.assertEqual(349.0, first_product.price)
         self.assertEqual(4.8, first_product.rating)
         self.assertFalse(first_product.bestseller)
 
     def test_number_of_best_seller_items(self):
+        """Should return 5 items with bestseller attribute as True"""
         products = self.complete_page_controller.list_products()
         counter = 0
         for product in products:
@@ -127,6 +137,7 @@ class AmazonExtractorTestCase(unittest.TestCase):
         self.assertEqual(5, counter)
 
     def test_number_of_regular_items(self):
+        """Should return 19 items with false bestseller attribute"""
         products = self.complete_page_controller.list_products()
         counter = 0
         for product in products:
@@ -135,16 +146,9 @@ class AmazonExtractorTestCase(unittest.TestCase):
         self.assertEqual(19, counter)
 
     def test_without_items(self):
-        self.assertEqual(0,len(self.without_review_item_controller.list_products()))
+        """Should return 0 items when it's a page without results"""
+        self.assertEqual(0, len(self.without_review_item_controller.list_products()))
 
-    # def test_page_number(self):
-    #     self.fail()
-    #
-    # def test_has_next_page(self):
-    #     self.fail()
-
-    # def test_name_encoding_cleaning(self):
-    #     self.fail()
 
 if __name__ == '__main__':
     unittest.main()
