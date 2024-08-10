@@ -2,11 +2,14 @@ import bs4
 
 import re
 
+from typing import List
+
+from controllers.html_parser_interface import HtmlParserInterface
 from exceptions.ParsingFailureException import ParsingFailureException
 from models.product import Product
 
 
-class Controller:
+class AmazonParserController(HtmlParserInterface):
     """
     Main controller class for extracting data from the Amazon Website products' list
 
@@ -20,7 +23,7 @@ class Controller:
         self.content_path = content_path
         self.soup = self.__parse_html()
 
-    def list_products(self, bestseller_filter: bool = False, rating_value_filter: float = None, name_filter :str = None):
+    def list_products(self, bestseller_filter: bool = False, rating_value_filter: float = None, name_filter :str = None) -> List[Product]:
         """Main function that control the procedure to parse and list the products given the filters"""
         products = []
         parsed_items = self._find_items()
@@ -67,8 +70,7 @@ class Controller:
         else:
             return True
 
-    @staticmethod
-    def _has_bestseller_tag(item: bs4.BeautifulSoup) -> bool:
+    def _has_bestseller_tag(self, item: bs4.BeautifulSoup) -> bool:
         """Check if the bestseller tag exists for the given item"""
         match = item.select('span .a-badge-text')
         if (match is None) or (len(match) == 0):
@@ -77,7 +79,7 @@ class Controller:
         match_text = re.sub("\\n\s+", ' ', match[0].text.strip())
         return match_text == 'Mais vendido'
 
-    def _get_rating(self, item: bs4.BeautifulSoup):
+    def _get_rating(self, item: bs4.BeautifulSoup) -> float:
         """Extract the rating value for the given item"""
         if not self._has_rating(item):
             return 0.0
@@ -90,16 +92,15 @@ class Controller:
 
         return float(match_text.group(1).replace(',', '.'))
 
-    @staticmethod
-    def _get_name(item) -> str:
+    def _get_name(self, item: bs4.BeautifulSoup) -> str:
         """Extract the item's name"""
         match = item.select('.a-size-base-plus.a-color-base.a-text-normal')
         if (match is None) or (len(match) == 0):
-            return ''
+            raise ParsingFailureException
         match_text = re.sub("\\n\\s+", ' ', match[0].text.strip())
         return match_text
 
-    def _get_price(self, item) -> float:
+    def _get_price(self, item: bs4.BeautifulSoup) -> float:
         """Extract the item's price"""
         return self._get_whole_price_value(item) + self._get_decimal_fraction_price_value(item) / 100
 

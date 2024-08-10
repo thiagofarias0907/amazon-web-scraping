@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from typing import List
 
-from controllers.main import Controller
+from controllers.amazon_parser_controller import AmazonParserController
 from models.product import Product
 
 description = """
@@ -20,7 +20,7 @@ app = FastAPI(
     title='AmazonScraper',
     description=description
 )
-controller = Controller('pages/content.html')
+controller = AmazonParserController('pages/content.html')
 
 
 @app.get('/list_products', response_model=List[Product])
