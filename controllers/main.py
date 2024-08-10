@@ -2,46 +2,117 @@ import bs4
 
 import re
 
+from exceptions.ParsingFailureException import ParsingFailureException
+from models.product import Product
+
+
 class Controller:
+    """
+    Main controller class for extracting data from the Amazon Website products' list
+
+    Assumptions:
+     - Expecting that price and values are in the same currency
+     - Extracting only the final and best price value (main value shown for each item) after discounts
+    """
 
     def __init__(self, content_path):
         self.content_path = content_path
         self.soup = self.__parse_html()
-        # e_commerce_html = open('pages/content.html', 'r', encoding='utf-8')
-        # # Parse html
-        # self.soup = bs4.BeautifulSoup(e_commerce_html.read(), 'html.parser')
 
-    def list_products(self):
+    def list_products(self, bestseller_filter: bool = False, rating_value_filter: float = None, name_filter :str = None):
         """Documentation here"""
-        # print(self.soup.find('span', {'class': 'a-badge-text'}).text)
+        products = []
+        parsed_items = self._find_items()
+        for item in parsed_items:
+            name = self._get_name(item)
+            if (name_filter is not None) and (name_filter != name):
+                continue
 
-        # This should return the list of products
-        return []
+            bestseller = self._has_bestseller_tag(item)
+            if bestseller_filter and not bestseller:
+                continue
+
+            rating = self._get_rating(item)
+            if (rating_value_filter is not None) and rating <= rating_value_filter:
+                continue
+
+            price = self._get_price(item)
+            product = Product(name=name, price=price, bestseller=bestseller, rating=rating)
+            products.append(product)
+        return products
 
     def __read_file(self):
         """Read a html file content. It will throw FileNotFound and other reading exception"""
-        # todo: Might need to create a webpage reader using uri + requests, unless this projects still aims to read a file from a cloud storage
+        # todo: Might need to create a webpage reader using uri + requests, unless this project aims to read a
+        #  file from a cloud storage
 
-        html_content = open(self.content_path, 'r', encoding='utf-8')
-        return html_content.read()
+        html_content = None
+        with open(self.content_path, 'r', encoding='utf-8') as file:
+            html_content = file.read()
+        return html_content
 
     def __parse_html(self):
         """Parse the html content with BeautifulSoup"""
         return bs4.BeautifulSoup(self.__read_file(), 'html.parser')
 
-    def _find_items(self):
+    def _find_items(self) -> list:
         """Find the items list"""
-        return self.soup.select('span .s-result-item')
+        items = list(self.soup.select('span .s-result-item.s-asin'))
+        return items
 
     @staticmethod
-    def has_rating(item: bs4.BeautifulSoup) -> bool:
-        return len(item.select('div .a-row.a-size-small')) > 0
+    def _has_rating(item: bs4.BeautifulSoup) -> bool:
+        match_css_select = item.select('div .a-row.a-size-small')
+        if (match_css_select is None) or (len(match_css_select) == 0):
+            return False
+        else:
+            return True
 
     @staticmethod
-    def has_bestseller_tag(item: bs4.BeautifulSoup) -> bool:
+    def _has_bestseller_tag(item: bs4.BeautifulSoup) -> bool:
         match = item.select('span .a-badge-text')
         if (match is None) or (len(match) == 0):
             return False
-        match_text = re.sub("\\n\s+",' ', match[0].text.strip())
+
+        match_text = re.sub("\\n\s+", ' ', match[0].text.strip())
         return match_text == 'Mais vendido'
 
+    def _get_rating(self, item: bs4.BeautifulSoup):
+        if not self._has_rating(item):
+            return 0.0
+
+        match_css_select = item.select('div .a-row.a-size-small')
+        match_text = re.search("([\\d,]+).*de.*\\d+", match_css_select[0].text.strip())
+
+        if (match_text is None) or (len(match_text.groups()) == 0):
+            raise ParsingFailureException(id="get_rating", content=match_css_select[0].text)
+
+        return float(match_text.group(1).replace(',', '.'))
+
+    @staticmethod
+    def _get_name(item) -> str:
+        match = item.select('.a-size-base-plus.a-color-base.a-text-normal')
+        if (match is None) or (len(match) == 0):
+            return False
+        match_text = re.sub("\\n\s+", ' ', match[0].text.strip())
+        return match_text
+
+    def _get_price(self, item) -> float:
+        return self._get_whole_price(item) + self._get_decimal_price(item) / 100
+
+    @staticmethod
+    def _get_whole_price(item) -> int:
+        """Get the whole / integer part of the price. It expects positive or 0 values only"""
+        match = item.select('span .a-price-whole')
+        if (match is None) or (len(match) == 0):
+            return False
+        match_text = re.sub("\\D+", '', match[0].text.strip())
+        return int(match_text)
+
+    @staticmethod
+    def _get_decimal_price(item) -> int:
+        match = item.select('span .a-price-fraction')
+        if (match is None) or (len(match) == 0):
+            return False
+        match_text = re.sub("\\D+", '', match[0].text.strip())
+        return int(match_text)

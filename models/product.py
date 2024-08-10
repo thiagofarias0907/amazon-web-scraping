@@ -1,11 +1,7 @@
-class Product:
-    __name = None
-    __bestseller = False
-    __rating = 0.0
-    __price = 0.0
+from pydantic import BaseModel
 
-    def __init__(self, name: str, bestseller: bool, rating: float, price: float):
-        self.__name = name
-        self.__bestseller = bestseller
-        self.__rating = rating
-        self.__price = price
+class Product(BaseModel):
+    name: str
+    bestseller: bool = False
+    rating: float = 0.0
+    price: float = 0.0
