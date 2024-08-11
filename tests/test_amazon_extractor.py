@@ -2,17 +2,19 @@ import unittest
 from unittest.mock import patch
 
 from controllers.amazon_parser_controller import AmazonParserController
+import os
 
+test_dir = os.path.dirname(__file__)
 
 class AmazonExtractorTestCase(unittest.TestCase):
-    complete_page_controller = AmazonParserController('pages/complete_page.html')
-    fewer_items_page_controller = AmazonParserController('pages/fewer_items_page.html')
-    without_items_page_controller = AmazonParserController('pages/items_not_found.html')
+    complete_page_controller = AmazonParserController(os.path.join(test_dir,'pages/complete_page.html'))
+    fewer_items_page_controller = AmazonParserController(os.path.join(test_dir,'pages/fewer_items_page.html'))
+    without_items_page_controller = AmazonParserController(os.path.join(test_dir,'pages/items_not_found.html'))
 
-    bestseller_item_controller = AmazonParserController('pages/bestseller_item.html')
-    regular_item_controller = AmazonParserController('pages/regular_item.html')
+    bestseller_item_controller = AmazonParserController(os.path.join(test_dir,'pages/bestseller_item.html'))
+    regular_item_controller = AmazonParserController(os.path.join(test_dir,'pages/regular_item.html'))
 
-    without_review_item_controller = AmazonParserController('pages/without_review_item.html')
+    without_review_item_controller = AmazonParserController(os.path.join(test_dir,'pages/without_review_item.html'))
 
     def test_number_of_items_parsed(self):
         """Should match the right number of items in each page"""
@@ -44,7 +46,7 @@ class AmazonExtractorTestCase(unittest.TestCase):
         """Should get the item's rating value"""
         with patch('controllers.amazon_parser_controller.AmazonParserController._has_rating') as mock_controller_has_rating:
             mock_controller_has_rating.return_value = True
-            item_controller = AmazonParserController('pages/regular_item.html')
+            item_controller = AmazonParserController(os.path.join(test_dir,'pages/regular_item.html'))
             self.assertEqual(4.7, item_controller._get_rating(item_controller.soup))
 
     def test_rating_value_when_none(self):
@@ -52,7 +54,7 @@ class AmazonExtractorTestCase(unittest.TestCase):
 
         with patch('controllers.amazon_parser_controller.AmazonParserController._has_rating') as mock_controller_has_rating:
             mock_controller_has_rating.return_value = False
-            item_controller = AmazonParserController('pages/without_review_item.html')
+            item_controller = AmazonParserController(os.path.join(test_dir,'pages/without_review_item.html'))
             self.assertEqual(0.0, item_controller._get_rating(item_controller.soup))
 
     def test_price_whole_value(self):
