@@ -76,7 +76,7 @@ class AmazonParserController(HtmlParserInterface):
         if (match is None) or (len(match) == 0):
             return False
 
-        match_text = re.sub("\\n\s+", ' ', match[0].text.strip())
+        match_text = re.sub("\\n\\s+", ' ', match[0].text.strip())
         return match_text == 'Mais vendido'
 
     def _get_rating(self, item: bs4.BeautifulSoup) -> float:
