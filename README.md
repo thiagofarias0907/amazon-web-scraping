@@ -1,4 +1,4 @@
-# Simple Amazon Web Scraper
+# Simple Amazon Web Scraping
 
 ## Description
 Simple Web Scraper API using BeautifulSoup and FastApi. It uses a file (*content.html*) containing the html page of a search result from the Amazon Website. This project was made with a TDD approach, using the html files in the `tests/pages` folder.
